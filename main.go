@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/minya/erc/ercli"
+	"github.com/minya/erc/erclib"
 	"io/ioutil"
 	"log"
 	"os"
