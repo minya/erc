@@ -1,0 +1,5 @@
+domofoneBot
+
+*.sw[po]
+*.log
+*.html
