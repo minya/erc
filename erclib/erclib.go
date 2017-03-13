@@ -32,7 +32,7 @@ func GetBalanceInfo(ercLogin string, ercPassword string, accNumber string, date 
 	respLogin, errLogin := client.PostForm(ercPrivareOfficeUrl, data)
 
 	if nil == respLogin || respLogin.StatusCode != 302 {
-		log.Fatalf("Login error: %v \n", errLogin)
+		log.Printf("Login error: %v \n", errLogin)
 		if nil != respLogin {
 			return BalanceInfo{}, fmt.Errorf("Error: Login response code: %v \n", respLogin.StatusCode)
 		}
