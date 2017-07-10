@@ -69,13 +69,15 @@ func parseBalance(html string) BalanceInfo {
 	result.Credit.CompanyPart, _ = strconv.ParseFloat(match[3][3], 64)
 	result.Credit.RepairPart, _ = strconv.ParseFloat(match[4][3], 64)
 
-	result.Debit.Total, _ = strconv.ParseFloat(match[5][3], 64)
-	result.Debit.CompanyPart, _ = strconv.ParseFloat(match[6][3], 64)
-	result.Debit.RepairPart, _ = strconv.ParseFloat(match[7][3], 64)
+	if len(match) > 5 {
+		result.Debit.Total, _ = strconv.ParseFloat(match[5][3], 64)
+		result.Debit.CompanyPart, _ = strconv.ParseFloat(match[6][3], 64)
+		result.Debit.RepairPart, _ = strconv.ParseFloat(match[7][3], 64)
 
-	result.AtTheEnd.CompanyPart, _ = strconv.ParseFloat(match[9][3], 64)
-	result.AtTheEnd.RepairPart, _ = strconv.ParseFloat(match[10][3], 64)
-	result.AtTheEnd.Total = result.AtTheEnd.CompanyPart + result.AtTheEnd.RepairPart
+		result.AtTheEnd.CompanyPart, _ = strconv.ParseFloat(match[9][3], 64)
+		result.AtTheEnd.RepairPart, _ = strconv.ParseFloat(match[10][3], 64)
+		result.AtTheEnd.Total = result.AtTheEnd.CompanyPart + result.AtTheEnd.RepairPart
+	}
 
 	return result
 }
