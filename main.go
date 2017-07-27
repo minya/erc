@@ -35,10 +35,21 @@ func main() {
 		log.Fatalf("read settings: %v \n", settingsErr)
 	}
 
-	balance, _ := erclib.GetBalanceInfo(
-		settings.ErcLogin, settings.ErcPassword, settings.AccountNumber, time.Now())
+	if len(os.Args) == 1 || (os.Args[1] != "balance" && os.Args[1] != "receipt") {
+		fmt.Printf("Usage: erc balance|receipt\n")
+		os.Exit(-1)
+	}
+	method := os.Args[1]
+	if method == "balance" {
+		balance, _ := erclib.GetBalanceInfo(
+			settings.ErcLogin, settings.ErcPassword, settings.AccountNumber, time.Now())
+		fmt.Printf("%v\n", balance)
+	} else {
+		receipt, _ := erclib.GetReceipt(
+			settings.ErcLogin, settings.ErcPassword, settings.AccountNumber)
+		os.Stdout.Write(receipt)
+	}
 
-	fmt.Printf("%v\n", balance)
 }
 
 func setUpLogger() {

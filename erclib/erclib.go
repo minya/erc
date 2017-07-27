@@ -15,27 +15,12 @@ import (
 	"time"
 )
 
+var ercPrivareOfficeUrl = "https://www.erc.ur.ru/client/private_office/private_office.htp"
+
 func GetBalanceInfo(ercLogin string, ercPassword string, accNumber string, date time.Time) (BalanceInfo, error) {
-	jar := web.NewJar()
-	transport := web.DefaultTransport(5000)
-	client := http.Client{
-		Transport:     transport,
-		Jar:           jar,
-		CheckRedirect: checkRedirect,
-	}
-	data := url.Values{}
-	data.Set("smth", "")
-	data.Set("username", ercLogin)
-	data.Set("password", ercPassword)
-
-	ercPrivareOfficeUrl := "https://www.erc.ur.ru/client/private_office/private_office.htp"
-	respLogin, errLogin := client.PostForm(ercPrivareOfficeUrl, data)
-
-	if nil == respLogin || respLogin.StatusCode != 302 {
-		log.Printf("Login error: %v \n", errLogin)
-		if nil != respLogin {
-			return BalanceInfo{}, fmt.Errorf("Error: Login response code: %v \n", respLogin.StatusCode)
-		}
+	client, err := getAuthContext(ercLogin, ercPassword)
+	if nil != err {
+		return BalanceInfo{}, fmt.Errorf("Authentication error")
 	}
 
 	dataUrl := ercPrivareOfficeUrl + "?ls=" + accNumber
@@ -56,6 +41,54 @@ func GetBalanceInfo(ercLogin string, ercPassword string, accNumber string, date 
 
 	//fmt.Printf("%v", html)
 	return parseBalance(html), nil
+}
+
+func GetReceipt(ercLogin string, ercPassword string, accNumber string) ([]byte, error) {
+	client, err := getAuthContext(ercLogin, ercPassword)
+	var bytesEmpty []byte
+	if nil != err {
+		return bytesEmpty, fmt.Errorf("Authentication error")
+	}
+
+	getReceiptUrl := fmt.Sprintf(
+		"https://www.erc.ur.ru/erc/client/private_office/private_office.htp?receipt=%v&quitance",
+		accNumber)
+
+	receiptResponse, err := client.Get(getReceiptUrl)
+	if err != nil || receiptResponse == nil || receiptResponse.StatusCode != 200 {
+		return bytesEmpty, fmt.Errorf("Unable to fetch receipt")
+	}
+	body, err := ioutil.ReadAll(receiptResponse.Body)
+	if err != nil {
+		return bytesEmpty, fmt.Errorf("Unable to read receipt's response")
+	}
+	return body, nil
+}
+
+func getAuthContext(ercLogin string, ercPassword string) (*http.Client, error) {
+	jar := web.NewJar()
+	transport := web.DefaultTransport(5000)
+	client := http.Client{
+		Transport:     transport,
+		Jar:           jar,
+		CheckRedirect: checkRedirect,
+	}
+	data := url.Values{}
+	data.Set("smth", "")
+	data.Set("username", ercLogin)
+	data.Set("password", ercPassword)
+
+	respLogin, errLogin := client.PostForm(ercPrivareOfficeUrl, data)
+
+	if nil == respLogin || respLogin.StatusCode != 302 {
+		log.Printf("Login error: %v \n", errLogin)
+		if nil != respLogin {
+			return nil, fmt.Errorf("Error: Login response code: %v \n", respLogin.StatusCode)
+		} else {
+			return nil, fmt.Errorf("Error: unable to log in\n")
+		}
+	}
+	return &client, nil
 }
 
 func parseBalance(html string) BalanceInfo {
