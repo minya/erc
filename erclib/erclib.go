@@ -24,11 +24,12 @@ func GetBalanceInfo(ercLogin string, ercPassword string, accNumber string, date 
 	}
 
 	dataUrl := ercPrivareOfficeUrl + "?ls=" + accNumber
-	strDate := date.Format("02-01-2006")
+	strDateTo := date.Format("02-01-2006")
+	strDateFrom := date.AddDate(0, -1, 0).Format("02-01-2006")
 	dataReq := url.Values{}
 	dataReq.Set("show", "3")
-	dataReq.Set("s_Date", strDate)
-	dataReq.Set("e_Date", strDate)
+	dataReq.Set("s_Date", strDateFrom)
+	dataReq.Set("e_Date", strDateTo)
 
 	respData, errPost := client.PostForm(dataUrl, dataReq)
 	if nil != errPost {
