@@ -18,12 +18,7 @@ import (
 
 var ercPrivareOfficeUrl = "https://www.erc.ur.ru/client/private_office/private_office.htp"
 
-func GetBalanceInfo(
-	ercLogin string,
-	ercPassword string,
-	accNumber string,
-	date time.Time) (
-	BalanceInfo, error) {
+func GetBalanceInfo(ercLogin string, ercPassword string, accNumber string, date time.Time) (BalanceInfo, error) {
 	client, err := getAuthContext(ercLogin, ercPassword)
 	if nil != err {
 		return BalanceInfo{}, fmt.Errorf("Authentication error")
