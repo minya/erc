@@ -3,9 +3,6 @@ package erclib
 import (
 	"errors"
 	"fmt"
-	"github.com/minya/goutils/web"
-	"golang.org/x/text/encoding/charmap"
-	"golang.org/x/text/transform"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -13,11 +10,20 @@ import (
 	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/minya/goutils/web"
+	"golang.org/x/text/encoding/charmap"
+	"golang.org/x/text/transform"
 )
 
 var ercPrivareOfficeUrl = "https://www.erc.ur.ru/client/private_office/private_office.htp"
 
-func GetBalanceInfo(ercLogin string, ercPassword string, accNumber string, date time.Time) (BalanceInfo, error) {
+func GetBalanceInfo(
+	ercLogin string,
+	ercPassword string,
+	accNumber string,
+	date time.Time) (
+	BalanceInfo, error) {
 	client, err := getAuthContext(ercLogin, ercPassword)
 	if nil != err {
 		return BalanceInfo{}, fmt.Errorf("Authentication error")
@@ -95,6 +101,7 @@ func getAuthContext(ercLogin string, ercPassword string) (*http.Client, error) {
 func parseBalance(html string) BalanceInfo {
 	reRow, _ := regexp.Compile("(<td>(.+?)</td>\\s+?<td class='sum'><b>(.?|.+?)</b></td>)")
 	match := reRow.FindAllStringSubmatch(html, -1)
+	fmt.Printf("%v\n", match)
 
 	var result BalanceInfo
 	result.Month = match[1][3]

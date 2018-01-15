@@ -1,16 +1,14 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/minya/erc/erclib"
-	"io/ioutil"
 	"log"
 	"os"
-	"os/user"
-	"path"
 	"time"
+
+	"github.com/minya/erc/erclib"
+	"github.com/minya/goutils/config"
 )
 
 var logPath string
@@ -49,7 +47,6 @@ func main() {
 			settings.ErcLogin, settings.ErcPassword, settings.AccountNumber)
 		os.Stdout.Write(receipt)
 	}
-
 }
 
 func setUpLogger() {
@@ -61,17 +58,9 @@ func setUpLogger() {
 }
 
 func readSettings() (Settings, error) {
-	user, _ := user.Current()
-	settingsPath := path.Join(user.HomeDir, ".erc/settings.json")
-
 	var settings Settings
-	settingsBin, settingsErr := ioutil.ReadFile(settingsPath)
-	if nil != settingsErr {
-		return settings, settingsErr
-	}
-
-	json.Unmarshal(settingsBin, &settings)
-	return settings, nil
+	err := config.UnmarshalJson(&settings, "~/.erc/settings.json")
+	return settings, err
 }
 
 type Settings struct {
