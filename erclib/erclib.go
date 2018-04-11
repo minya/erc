@@ -96,7 +96,6 @@ func getAuthContext(ercLogin string, ercPassword string) (*http.Client, error) {
 func parseBalance(html string) BalanceInfo {
 	reRow, _ := regexp.Compile("(<td>(.+?)</td>\\s+?<td class='sum'><b>(.?|.+?)</b></td>)")
 	match := reRow.FindAllStringSubmatch(html, -1)
-	fmt.Printf("%v\n", match)
 
 	var result BalanceInfo
 	result.Month = match[1][3]
