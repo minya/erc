@@ -16,7 +16,7 @@ import (
 	"golang.org/x/text/transform"
 )
 
-var ercPrivareOfficeUrl = "https://www.erc.ur.ru/client/private_office/private_office.htp"
+var ercPrivareOfficeUrl = "https://lk.erc-ekb.ru/client/private_office/private_office.htp"
 
 func GetBalanceInfo(ercLogin string, ercPassword string, accNumber string, date time.Time) (BalanceInfo, error) {
 	client, err := getAuthContext(ercLogin, ercPassword)
@@ -53,7 +53,7 @@ func GetReceipt(ercLogin string, ercPassword string, accNumber string) ([]byte, 
 	}
 
 	getReceiptUrl := fmt.Sprintf(
-		"https://www.erc.ur.ru/erc/client/private_office/private_office.htp?receipt=%v&quitance",
+		"https://lk.erc-ekb.ru/erc/client/private_office/private_office.htp?receipt=%v&quitance",
 		accNumber)
 
 	receiptResponse, err := client.Get(getReceiptUrl)
