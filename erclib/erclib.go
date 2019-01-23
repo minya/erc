@@ -16,15 +16,16 @@ import (
 	"golang.org/x/text/transform"
 )
 
-var ercPrivareOfficeUrl = "https://lk.erc-ekb.ru/client/private_office/private_office.htp"
+var ercPrivareOfficeURL = "https://lk.erc-ekb.ru/client/private_office/private_office.htp"
 
+// GetBalanceInfo gets balance
 func GetBalanceInfo(ercLogin string, ercPassword string, accNumber string, date time.Time) (BalanceInfo, error) {
 	client, err := getAuthContext(ercLogin, ercPassword)
 	if nil != err {
 		return BalanceInfo{}, fmt.Errorf("Authentication error")
 	}
 
-	dataUrl := ercPrivareOfficeUrl + "?ls=" + accNumber
+	dataURL := ercPrivareOfficeURL + "?ls=" + accNumber
 	strDateTo := date.Format("02-01-2006")
 	strDateFrom := date.AddDate(0, -1, 0).Format("02-01-2006")
 	dataReq := url.Values{}
@@ -32,7 +33,7 @@ func GetBalanceInfo(ercLogin string, ercPassword string, accNumber string, date 
 	dataReq.Set("s_Date", strDateFrom)
 	dataReq.Set("e_Date", strDateTo)
 
-	respData, errPost := client.PostForm(dataUrl, dataReq)
+	respData, errPost := client.PostForm(dataURL, dataReq)
 	if nil != errPost {
 		return BalanceInfo{}, errPost
 	}
@@ -45,6 +46,7 @@ func GetBalanceInfo(ercLogin string, ercPassword string, accNumber string, date 
 	return parseBalance(html), nil
 }
 
+// GetReceipt receives receipt for account
 func GetReceipt(ercLogin string, ercPassword string, accNumber string) ([]byte, error) {
 	client, err := getAuthContext(ercLogin, ercPassword)
 	var bytesEmpty []byte
@@ -52,11 +54,11 @@ func GetReceipt(ercLogin string, ercPassword string, accNumber string) ([]byte, 
 		return bytesEmpty, fmt.Errorf("Authentication error")
 	}
 
-	getReceiptUrl := fmt.Sprintf(
+	getReceiptURL := fmt.Sprintf(
 		"https://lk.erc-ekb.ru/erc/client/private_office/private_office.htp?receipt=%v&quitance",
 		accNumber)
 
-	receiptResponse, err := client.Get(getReceiptUrl)
+	receiptResponse, err := client.Get(getReceiptURL)
 	if err != nil || receiptResponse == nil || receiptResponse.StatusCode != 200 {
 		return bytesEmpty, fmt.Errorf("Unable to fetch receipt")
 	}
@@ -80,14 +82,14 @@ func getAuthContext(ercLogin string, ercPassword string) (*http.Client, error) {
 	data.Set("username", ercLogin)
 	data.Set("password", ercPassword)
 
-	respLogin, errLogin := client.PostForm(ercPrivareOfficeUrl, data)
+	respLogin, errLogin := client.PostForm(ercPrivareOfficeURL, data)
 
 	if nil == respLogin || respLogin.StatusCode != 302 {
 		log.Printf("Login error: %v \n", errLogin)
 		if nil != respLogin {
-			return nil, fmt.Errorf("Error: Login response code: %v \n", respLogin.StatusCode)
+			return nil, fmt.Errorf("Error: Login response code: %v ", respLogin.StatusCode)
 		} else {
-			return nil, fmt.Errorf("Error: unable to log in\n")
+			return nil, fmt.Errorf("Error: unable to log in ")
 		}
 	}
 	return &client, nil
@@ -122,6 +124,7 @@ func checkRedirect(r *http.Request, rr []*http.Request) error {
 	return errors.New("Don't redirect")
 }
 
+// BalanceInfo struct describes balance
 type BalanceInfo struct {
 	Month    string
 	Credit   Details
@@ -129,6 +132,7 @@ type BalanceInfo struct {
 	AtTheEnd Details
 }
 
+// Details struct
 type Details struct {
 	Total       float64
 	CompanyPart float64
