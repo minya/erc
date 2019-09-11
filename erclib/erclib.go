@@ -43,7 +43,7 @@ func GetBalanceInfo(ercLogin string, ercPassword string, accNumber string, date 
 	html := string(bytes)
 
 	//fmt.Printf("%v", html)
-	return parseBalance(html), nil
+	return parseBalance(html)
 }
 
 // GetReceipt receives receipt for account
@@ -87,19 +87,27 @@ func getAuthContext(ercLogin string, ercPassword string) (*http.Client, error) {
 	if nil == respLogin || respLogin.StatusCode != 302 {
 		log.Printf("Login error: %v \n", errLogin)
 		if nil != respLogin {
-			return nil, fmt.Errorf("Error: Login response code: %v ", respLogin.StatusCode)
-		} else {
-			return nil, fmt.Errorf("Error: unable to log in ")
+			return nil, fmt.Errorf("Error: Login response code: %v", respLogin.StatusCode)
 		}
+		return nil, fmt.Errorf("Error: unable to log in")
 	}
+
 	return &client, nil
 }
 
-func parseBalance(html string) BalanceInfo {
-	reRow, _ := regexp.Compile("(<td>(.+?)</td>\\s+?<td class='sum'><b>(.?|.+?)</b></td>)")
+func parseBalance(html string) (BalanceInfo, error) {
+	reRow, errCompile := regexp.Compile("(<td>(.+?)</td>\\s+?<td class='sum'><b>(.?|.+?)</b></td>)")
+	var result BalanceInfo
+	if errCompile != nil {
+		return result, errCompile
+	}
+
 	match := reRow.FindAllStringSubmatch(html, -1)
 
-	var result BalanceInfo
+	if len(match) < 11 {
+		return result, fmt.Errorf("No match found")
+	}
+
 	result.Month = match[1][3]
 
 	result.Credit.Total, _ = strconv.ParseFloat(match[2][3], 64)
@@ -116,7 +124,7 @@ func parseBalance(html string) BalanceInfo {
 		result.AtTheEnd.Total = result.AtTheEnd.CompanyPart + result.AtTheEnd.RepairPart
 	}
 
-	return result
+	return result, nil
 }
 
 func checkRedirect(r *http.Request, rr []*http.Request) error {
