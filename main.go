@@ -12,40 +12,45 @@ import (
 )
 
 var logPath string
+var settings cSettings
+
+func main() {
+	log.Printf("Start\n")
+
+	if len(os.Args) == 1 {
+		usage()
+	}
+	request := os.Args[1]
+	if request != "balance" && request != "receipt" && request != "accounts" {
+		usage()
+	}
+	ercClient := erclib.NewErcClientWithCredentials(settings.ErcLogin, settings.ErcPassword)
+	if request == "balance" {
+		balance, _ := ercClient.GetBalanceInfo(
+			settings.AccountNumber, time.Now())
+		fmt.Printf("%v\n", balance)
+	} else if request == "receipt" {
+		receipt, _ := ercClient.GetReceipt(settings.AccountNumber)
+		os.Stdout.Write(receipt)
+	} else {
+		accounts, _ := ercClient.GetAccounts()
+		for _, acc := range accounts {
+			fmt.Printf("%v\t%v\n", acc.Number, acc.Address)
+		}
+	}
+}
 
 func init() {
 	const (
 		defaultLogPath = "erc.log"
 	)
 	flag.StringVar(&logPath, "logpath", defaultLogPath, "Path to write logs")
-}
-
-func main() {
-
 	flag.Parse()
-
 	setUpLogger()
-
-	log.Printf("Start\n")
-
-	settings, settingsErr := readSettings()
+	var settingsErr error
+	settings, settingsErr = readSettings()
 	if nil != settingsErr {
 		log.Fatalf("read settings: %v \n", settingsErr)
-	}
-
-	if len(os.Args) == 1 || (os.Args[1] != "balance" && os.Args[1] != "receipt") {
-		fmt.Printf("Usage: erc balance|receipt\n")
-		os.Exit(-1)
-	}
-	method := os.Args[1]
-	if method == "balance" {
-		balance, _ := erclib.GetBalanceInfo(
-			settings.ErcLogin, settings.ErcPassword, settings.AccountNumber, time.Now())
-		fmt.Printf("%v\n", balance)
-	} else {
-		receipt, _ := erclib.GetReceipt(
-			settings.ErcLogin, settings.ErcPassword, settings.AccountNumber)
-		os.Stdout.Write(receipt)
 	}
 }
 
@@ -57,13 +62,18 @@ func setUpLogger() {
 	log.SetOutput(logFile)
 }
 
-func readSettings() (Settings, error) {
-	var settings Settings
+func readSettings() (cSettings, error) {
+	var settings cSettings
 	err := config.UnmarshalJson(&settings, "~/.erc/settings.json")
 	return settings, err
 }
 
-type Settings struct {
+func usage() {
+	fmt.Printf("Usage: erc balance|receipt|accounts\n")
+	os.Exit(-1)
+}
+
+type cSettings struct {
 	ErcLogin      string
 	ErcPassword   string
 	AccountNumber string
