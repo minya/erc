@@ -35,7 +35,7 @@ func NewErcClientWithCredentials(ercLogin string, ercPassword string) ErcClient 
 }
 
 // GetBalanceInfo gets balance
-func (ercClient *ErcClient) GetBalanceInfo(accNumber string, date time.Time) (BalanceInfo, error) {
+func (ercClient ErcClient) GetBalanceInfo(accNumber string, date time.Time) (BalanceInfo, error) {
 	client, err := ercClient.getAuthContext()
 	if nil != err {
 		return BalanceInfo{}, fmt.Errorf("Authentication error")
@@ -63,7 +63,7 @@ func (ercClient *ErcClient) GetBalanceInfo(accNumber string, date time.Time) (Ba
 }
 
 // GetReceipt receives receipt for account
-func (ercClient *ErcClient) GetReceipt(accNumber string) ([]byte, error) {
+func (ercClient ErcClient) GetReceipt(accNumber string) ([]byte, error) {
 	client, err := ercClient.getAuthContext()
 	var bytesEmpty []byte
 	if nil != err {
@@ -86,7 +86,7 @@ func (ercClient *ErcClient) GetReceipt(accNumber string) ([]byte, error) {
 }
 
 //GetAccounts asd
-func (ercClient *ErcClient) GetAccounts() ([]Account, error) {
+func (ercClient ErcClient) GetAccounts() ([]Account, error) {
 	client, err := ercClient.getAuthContext()
 	if nil != err {
 		return []Account{}, fmt.Errorf("Authentication error")
