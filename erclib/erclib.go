@@ -18,9 +18,25 @@ import (
 
 var ercPrivareOfficeURL = "https://lk.erc-ekb.ru/client/private_office/private_office.htp"
 
+//ErcClient to query data from erc.ur.ru
+type ErcClient struct {
+	login      string
+	password   string
+	httpClient *http.Client
+}
+
+//NewErcClientWithCredentials ololo
+func NewErcClientWithCredentials(ercLogin string, ercPassword string) ErcClient {
+	ercClient := ErcClient{
+		login:    ercLogin,
+		password: ercPassword,
+	}
+	return ercClient
+}
+
 // GetBalanceInfo gets balance
-func GetBalanceInfo(ercLogin string, ercPassword string, accNumber string, date time.Time) (BalanceInfo, error) {
-	client, err := getAuthContext(ercLogin, ercPassword)
+func (ercClient ErcClient) GetBalanceInfo(accNumber string, date time.Time) (BalanceInfo, error) {
+	client, err := ercClient.getAuthContext()
 	if nil != err {
 		return BalanceInfo{}, fmt.Errorf("Authentication error")
 	}
@@ -47,8 +63,8 @@ func GetBalanceInfo(ercLogin string, ercPassword string, accNumber string, date 
 }
 
 // GetReceipt receives receipt for account
-func GetReceipt(ercLogin string, ercPassword string, accNumber string) ([]byte, error) {
-	client, err := getAuthContext(ercLogin, ercPassword)
+func (ercClient ErcClient) GetReceipt(accNumber string) ([]byte, error) {
+	client, err := ercClient.getAuthContext()
 	var bytesEmpty []byte
 	if nil != err {
 		return bytesEmpty, fmt.Errorf("Authentication error")
@@ -69,7 +85,29 @@ func GetReceipt(ercLogin string, ercPassword string, accNumber string) ([]byte, 
 	return body, nil
 }
 
-func getAuthContext(ercLogin string, ercPassword string) (*http.Client, error) {
+//GetAccounts asd
+func (ercClient ErcClient) GetAccounts() ([]Account, error) {
+	client, err := ercClient.getAuthContext()
+	if nil != err {
+		return []Account{}, fmt.Errorf("Authentication error")
+	}
+	accountsURL := "https://lk.erc-ekb.ru/client/private_office/private_office.htp?ls"
+	response, err := client.Get(accountsURL)
+	if err != nil || response == nil || response.StatusCode != 200 {
+		return []Account{}, fmt.Errorf("Unable to fetch receipt")
+	}
+	tr := transform.NewReader(response.Body, charmap.Windows1251.NewDecoder())
+	bytes, _ := ioutil.ReadAll(tr)
+	html := string(bytes)
+	//fmt.Printf("%v", html)
+	return parseAccounts(html)
+}
+
+func (ercClient *ErcClient) getAuthContext() (*http.Client, error) {
+	if nil != ercClient.httpClient {
+		return ercClient.httpClient, nil
+	}
+
 	jar := web.NewJar()
 	transport := web.DefaultTransport(5000)
 	client := http.Client{
@@ -79,8 +117,8 @@ func getAuthContext(ercLogin string, ercPassword string) (*http.Client, error) {
 	}
 	data := url.Values{}
 	data.Set("smth", "")
-	data.Set("username", ercLogin)
-	data.Set("password", ercPassword)
+	data.Set("username", ercClient.login)
+	data.Set("password", ercClient.password)
 
 	respLogin, errLogin := client.PostForm(ercPrivareOfficeURL, data)
 
@@ -92,7 +130,8 @@ func getAuthContext(ercLogin string, ercPassword string) (*http.Client, error) {
 		return nil, fmt.Errorf("Error: unable to log in")
 	}
 
-	return &client, nil
+	ercClient.httpClient = &client
+	return ercClient.httpClient, nil
 }
 
 func parseBalance(html string) (BalanceInfo, error) {
@@ -127,6 +166,24 @@ func parseBalance(html string) (BalanceInfo, error) {
 	return result, nil
 }
 
+func parseAccounts(html string) ([]Account, error) {
+	reRow, errCompile := regexp.Compile("<td>\\s+?<a\\shref=\"\\/client\\/private_office\\/private_office.htp\\?ls=(\\d+)\">\\d+<\\/a>\\s+<\\/td>\\s+<td>(.+?)<\\/td>")
+	result := []Account{}
+	if errCompile != nil {
+		return result, errCompile
+	}
+
+	match := reRow.FindAllStringSubmatch(html, -1)
+
+	if len(match) < 1 {
+		return result, fmt.Errorf("No match found")
+	}
+	for _, group := range match {
+		result = append(result, Account{Number: group[1], Address: group[2]})
+	}
+	return result, nil
+}
+
 func checkRedirect(r *http.Request, rr []*http.Request) error {
 	log.Printf("Check redirect")
 	return errors.New("Don't redirect")
@@ -145,4 +202,10 @@ type Details struct {
 	Total       float64
 	CompanyPart float64
 	RepairPart  float64
+}
+
+// Account struct
+type Account struct {
+	Number  string
+	Address string
 }
