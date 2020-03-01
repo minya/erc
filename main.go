@@ -25,19 +25,34 @@ func main() {
 		usage()
 	}
 	ercClient := erclib.NewErcClientWithCredentials(settings.ErcLogin, settings.ErcPassword)
-	if request == "balance" {
-		balance, _ := ercClient.GetBalanceInfo(
-			settings.AccountNumber, time.Now())
-		fmt.Printf("%v\n", balance)
-	} else if request == "receipt" {
-		receipt, _ := ercClient.GetReceipt(settings.AccountNumber)
-		os.Stdout.Write(receipt)
-	} else {
+	if request == "accounts" {
 		accounts, _ := ercClient.GetAccounts()
 		for _, acc := range accounts {
 			fmt.Printf("%v\t%v\n", acc.Number, acc.Address)
 		}
+		return
 	}
+
+	var accountNumber string
+	if len(os.Args) > 2 {
+		accountNumber = os.Args[2]
+	} else {
+		accountNumber = settings.AccountNumber
+	}
+
+	if request == "balance" {
+		balance, _ := ercClient.GetBalanceInfo(accountNumber, time.Now())
+		fmt.Printf("%v\n", balance)
+		return
+	}
+
+	if request == "receipt" {
+		receipt, _ := ercClient.GetReceipt(settings.AccountNumber)
+		os.Stdout.Write(receipt)
+		return
+	}
+
+	log.Fatal("Impossible")
 }
 
 func init() {
