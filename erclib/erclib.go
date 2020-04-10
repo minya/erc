@@ -25,7 +25,7 @@ type ErcClient struct {
 	httpClient *http.Client
 }
 
-//NewErcClientWithCredentials ololo
+//NewErcClientWithCredentials creates new erc client
 func NewErcClientWithCredentials(ercLogin string, ercPassword string) ErcClient {
 	ercClient := ErcClient{
 		login:    ercLogin,
