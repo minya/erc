@@ -43,7 +43,7 @@ func (ercClient ErcClient) GetBalanceInfo(accNumber string, date time.Time) (Bal
 
 	dataURL := ercPrivareOfficeURL + "?ls=" + accNumber
 	strDateTo := date.Format("02-01-2006")
-	strDateFrom := date.AddDate(0, -1, 0).Format("02-01-2006")
+	strDateFrom := date.AddDate(0, 0, 1-date.Day()).Format("02-01-2006")
 	dataReq := url.Values{}
 	dataReq.Set("show", "3")
 	dataReq.Set("s_Date", strDateFrom)
@@ -148,19 +148,12 @@ func parseBalance(html string) (BalanceInfo, error) {
 	}
 
 	result.Month = match[1][3]
-
-	result.Credit.Total, _ = strconv.ParseFloat(match[2][3], 64)
-	result.Credit.CompanyPart, _ = strconv.ParseFloat(match[3][3], 64)
-	result.Credit.RepairPart, _ = strconv.ParseFloat(match[4][3], 64)
-
-	if len(match) > 5 {
-		result.Debit.Total, _ = strconv.ParseFloat(match[5][3], 64)
-		result.Debit.CompanyPart, _ = strconv.ParseFloat(match[6][3], 64)
-		result.Debit.RepairPart, _ = strconv.ParseFloat(match[7][3], 64)
-
-		result.AtTheEnd.CompanyPart, _ = strconv.ParseFloat(match[9][3], 64)
-		result.AtTheEnd.RepairPart, _ = strconv.ParseFloat(match[10][3], 64)
-		result.AtTheEnd.Total = result.AtTheEnd.CompanyPart + result.AtTheEnd.RepairPart
+	for i := 2; i < len(match); i++ {
+		amount, _ := strconv.ParseFloat(match[i][3], 64)
+		result.Rows = append(result.Rows, BalanceRow{
+			Amount:    amount,
+			Requisite: match[i][2],
+		})
 	}
 
 	return result, nil
@@ -189,20 +182,24 @@ func checkRedirect(r *http.Request, rr []*http.Request) error {
 	return errors.New("Don't redirect")
 }
 
+// BalanceRow struct is a row from balance details as is
+type BalanceRow struct {
+	Requisite string
+	Amount    float64
+}
+
 // BalanceInfo struct describes balance
 type BalanceInfo struct {
-	Month    string
-	Credit   Details
-	Debit    Details
-	AtTheEnd Details
+	Month string
+	Rows  []BalanceRow
 }
 
 // Details struct
-type Details struct {
-	Total       float64
-	CompanyPart float64
-	RepairPart  float64
-}
+// type Details struct {
+// 	Total       float64
+// 	CompanyPart float64
+// 	RepairPart  float64
+// }
 
 // Account struct
 type Account struct {
