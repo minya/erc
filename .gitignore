@@ -3,3 +3,5 @@ erc
 *.sw[po]
 *.log
 *.html
+
+.vscode/
